@@ -1,0 +1,84 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "share": "disabled",
+  "model": "strixhalo/thinking",
+  "small_model": "strixhalo/instruct",
+  "provider": {
+    "strixhalo": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "strixhalo",
+      "options": {
+        "baseURL": "http://__IP_ADDRESS_OF_STRIX_HALO__:11434/v1",
+        "apiKey": "-"
+      },
+      "models": {
+        "chatting": {
+          "name": "chatting",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 3.75,
+            "cache_write": 1
+          },
+          "limit": {
+            "context": 128000,
+            "output": 16000
+          }
+        },
+        "instruct": {
+          "name": "instruct",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 3.75,
+            "cache_write": 1
+          },
+          "limit": {
+            "context": 128000,
+            "output": 16000
+          }
+        },
+        "thinking": {
+          "name": "thinking",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 3.75,
+            "cache_write": 1
+          },
+          "limit": {
+            "context": 128000,
+            "output": 16000
+          }
+        },
+        "coding": {
+          "name": "coding",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 3.75,
+            "cache_write": 1
+          },
+          "limit": {
+            "context": 128000,
+            "output": 16000
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "strixhalo/coding"
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "strixhalo/thinking"
+    },
+    "instruct": {
+      "mode": "primary",
+      "model": "strixhalo/instruct"
+    }
+  }
+}
