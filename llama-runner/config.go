@@ -79,7 +79,8 @@ func (c *Config) PresetNames() []string {
 
 // boolFlags are llama-server flags emitted without a value argument.
 var boolFlags = map[string]bool{
-	"jinja": true,
+	"jinja":   true,
+	"no-mmap": true,
 }
 
 // LlamaServerArgs builds CLI args from global settings, overriding host/port for internal use.

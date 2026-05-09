@@ -43,7 +43,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	proxy := NewProxy(cfg, internalPort)
+	proxy := NewProxy(cfg, internalPort, runner)
 	addr := fmt.Sprintf("%s:%d", cfg.ProxyHost(), proxyPort)
 	log.Printf("proxy listening on %s (presets: %s)", addr, strings.Join(cfg.PresetNames(), ", "))
 	if err := http.ListenAndServe(addr, proxy); err != nil {

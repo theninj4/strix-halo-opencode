@@ -18,14 +18,16 @@ type Proxy struct {
 	cfg          *Config
 	internalURL  *url.URL
 	reverseProxy *httputil.ReverseProxy
+	runner       *Runner
 }
 
-func NewProxy(cfg *Config, internalPort int) *Proxy {
+func NewProxy(cfg *Config, internalPort int, runner *Runner) *Proxy {
 	u, _ := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", internalPort))
 	return &Proxy{
 		cfg:          cfg,
 		internalURL:  u,
 		reverseProxy: httputil.NewSingleHostReverseProxy(u),
+		runner:       runner,
 	}
 }
 
@@ -69,25 +71,17 @@ func (p *Proxy) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	target := *p.internalURL
-	target.Path = r.URL.Path
-	target.RawQuery = r.URL.RawQuery
-
-	req, err := http.NewRequestWithContext(r.Context(), r.Method, target.String(), bytes.NewReader(modified))
+	resp, err := p.doUpstream(r, modified)
 	if err != nil {
-		http.Error(w, "failed to build upstream request", http.StatusInternalServerError)
-		return
-	}
-	for k, v := range r.Header {
-		req.Header[k] = v
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.ContentLength = int64(len(modified))
-
-	resp, err := upstreamClient.Do(req)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("upstream error: %v", err), http.StatusBadGateway)
-		return
+		if restartErr := p.runner.EnsureHealthy(); restartErr != nil {
+			http.Error(w, fmt.Sprintf("upstream error: %v", err), http.StatusBadGateway)
+			return
+		}
+		resp, err = p.doUpstream(r, modified)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("upstream error: %v", err), http.StatusBadGateway)
+			return
+		}
 	}
 	defer resp.Body.Close()
 
@@ -110,6 +104,24 @@ func (p *Proxy) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+}
+
+func (p *Proxy) doUpstream(r *http.Request, body []byte) (*http.Response, error) {
+	target := *p.internalURL
+	target.Path = r.URL.Path
+	target.RawQuery = r.URL.RawQuery
+
+	req, err := http.NewRequestWithContext(r.Context(), r.Method, target.String(), bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range r.Header {
+		req.Header[k] = v
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.ContentLength = int64(len(body))
+
+	return upstreamClient.Do(req)
 }
 
 // iniToAPIKey maps ini setting names to OpenAI/llama-server JSON field names.
